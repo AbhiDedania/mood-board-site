@@ -12,7 +12,7 @@ html,body{height:100%;margin:0}
 body{background:#05090c;color:#fff;font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
 
 /* full-screen backgrounds (two layers so they crossfade) */
-.bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;opacity:0;transition:opacity .9s ease}
+.bg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;opacity:0;transition:opacity .9s ease;will-change:opacity}
 .bg.on{opacity:1}
 .bg:not(.on){transition-delay:.9s}  /* old image stays until the new one has fully faded in */
 
@@ -32,7 +32,7 @@ body{background:#05090c;color:#fff;font-family:Inter,-apple-system,BlinkMacSyste
 .player::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(255,255,255,.1) 40%,rgba(150,235,255,.75) 100%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
 #title{margin:0;font-size:24px;line-height:30px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #sub{margin:6px 0 0;font-size:16px;line-height:22px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#seek{display:block;width:100%;height:22px;margin:21px 0 0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+#seek{display:block;width:100%;height:22px;margin:21px 0 0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
 #seek::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(to right,#7fe3d6,#d4e57c var(--p,0%),#dcdcdc var(--p,0%))}
 #seek::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.9),rgba(190,215,235,.65));border:2px solid rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(0,20,80,.35)}
 #seek::-moz-range-track{height:6px;border-radius:3px;background:#dcdcdc}
@@ -48,7 +48,7 @@ body{background:#05090c;color:#fff;font-family:Inter,-apple-system,BlinkMacSyste
 .ib .f{fill:currentColor;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
 .ib .o{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ib.tog[aria-pressed=true]{filter:drop-shadow(0 0 6px rgba(255,255,255,.85))}
-.ib.play{position:relative;width:62px;height:62px;border-radius:50%;border:0;background:linear-gradient(145deg,rgba(255,255,255,.32),rgba(255,255,255,.07) 65%,rgba(255,255,255,.14));backdrop-filter:blur(14px) saturate(190%);-webkit-backdrop-filter:blur(14px) saturate(190%);box-shadow:0 10px 24px rgba(0,10,40,.32),inset 2px 3px 5px rgba(255,255,255,.45),inset -3px -4px 8px rgba(255,255,255,.08)}
+.ib.play{position:relative;width:62px;height:62px;border-radius:50%;border:0;background:linear-gradient(145deg,rgba(255,255,255,.32),rgba(255,255,255,.07) 65%,rgba(255,255,255,.14));box-shadow:0 10px 24px rgba(0,10,40,.32),inset 2px 3px 5px rgba(255,255,255,.45),inset -3px -4px 8px rgba(255,255,255,.08)}
 .ib.play::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(90% 70% at 30% 8%,rgba(255,255,255,.5),rgba(255,255,255,0) 60%);pointer-events:none}
 .ib.play:hover{background:linear-gradient(145deg,rgba(255,255,255,.4),rgba(255,255,255,.1) 65%,rgba(255,255,255,.18))}
 .ib.play svg{position:relative}
@@ -56,8 +56,59 @@ body{background:#05090c;color:#fff;font-family:Inter,-apple-system,BlinkMacSyste
 #msg{position:absolute;z-index:2;left:50%;bottom:calc(100% + 14px);width:max-content;max-width:calc(100vw - 24px);transform:translate(-50%,56px);font-size:14px;line-height:1.35;padding:11px 18px;border-radius:16px;text-align:center;background:rgba(20,30,40,.55);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border:1px solid var(--edge);box-shadow:0 10px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .4s cubic-bezier(.2,.9,.3,1)}
 #msg.show{opacity:1;transform:translate(-50%,0)}
 #yt{position:fixed;right:0;bottom:0;width:240px;height:135px;z-index:-1;pointer-events:none}  /* hidden behind the background; YouTube needs a real-sized player to play */
-@media(max-width:420px){.player{padding:32px 22px 34px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+/* playlist button + panel (same glass theme as the player) */
+#title,#sub{padding:0 26px}
+.ib.pb{position:absolute;top:12px;right:12px;width:34px;height:34px}
+.ib.pb svg{width:22px;height:22px}
+.ib.pb[aria-expanded=true]{filter:drop-shadow(0 0 6px rgba(255,255,255,.85))}
+.plist{position:absolute;left:0;right:0;bottom:calc(100% + 14px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:10px;border-radius:32px;background:linear-gradient(135deg,rgba(255,255,255,.14),rgba(255,255,255,.05));backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);border:1px solid rgba(255,255,255,.3);box-shadow:0 18px 50px rgba(0,10,60,.28),inset 0 1px 0 rgba(255,255,255,.2);scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.35) transparent;transform:translateY(36px);visibility:hidden;pointer-events:none;transition:transform .4s cubic-bezier(.2,.9,.3,1),visibility 0s linear .4s}
+.plist.open{transform:none;visibility:visible;pointer-events:auto;transition-delay:0s}
+.plist .empty{margin:14px 10px;text-align:center;font-size:14px;color:rgba(255,255,255,.8)}
+.song{margin:0 0 8px;border-radius:30px;background:rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.14);transition:background .25s,border-color .25s}
+.song:last-child{margin-bottom:0}
+.song:hover,.song.open{background:rgba(255,255,255,.18)}
+.song.now{border-color:rgba(255,255,255,.6)}
+.head{display:flex;align-items:center;gap:12px;width:100%;padding:8px 18px 8px 8px;background:none;border:0;border-radius:inherit;color:#fff;font:600 15px/1.25 Inter,-apple-system,sans-serif;text-align:left;cursor:pointer}
+.head:focus-visible,.act:focus-visible{outline:2px solid #fff;outline-offset:-2px}
+.th{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:none;background:rgba(255,255,255,.18)}
+.nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.song.open .nm{white-space:normal}
+.eq{display:none;align-items:flex-end;gap:2px;height:14px;flex:none}
+.eq b{width:3px;height:6px;background:#fff;border-radius:2px}
+.eq b:nth-child(2){animation-delay:.2s}.eq b:nth-child(3){animation-delay:.4s}
+.song.now .eq{display:flex}
+.plist.on .song.now .eq b{animation:eqb 1s ease-in-out infinite}
+@keyframes eqb{0%,100%{height:4px}50%{height:14px}}
+.more{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s cubic-bezier(.3,.9,.3,1)}
+.song.open .more{grid-template-rows:1fr}
+.mi{overflow:hidden;min-height:0}
+.song:not(.open) .mx{visibility:hidden}
+.mx{padding:4px 12px 14px}
+.big{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:20px;background:rgba(255,255,255,.12);box-shadow:0 8px 24px rgba(0,10,40,.3)}
+.mx dl{margin:14px 4px 0;display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;line-height:1.35}
+.mx dt{color:rgba(255,255,255,.7);font-weight:300}.mx dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin:14px 4px 0}
+.act{display:inline-flex;align-items:center;padding:9px 16px;border:0;border-radius:999px;background:rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.3);color:#fff;font:600 14px/1 Inter,-apple-system,sans-serif;text-decoration:none;cursor:pointer}
+.act:hover{background:rgba(255,255,255,.28)}
+@media(max-width:600px){   /* phones: smaller, tighter player */
+  .dock{width:min(340px,calc(100vw - 32px));bottom:max(16px,env(safe-area-inset-bottom))}
+  .player{padding:20px 20px 22px;border-radius:26px}
+  #title{font-size:18px;line-height:24px}
+  #sub{font-size:13px;line-height:18px;margin-top:3px}
+  #seek{height:28px;margin:10px 0 0}
+  .times{font-size:11px;line-height:12px;margin-top:-2px}
+  .ctl{margin-top:6px}
+  .ib{width:34px;height:34px}.ib svg{width:22px;height:22px}
+  .ib.play{width:50px;height:50px}.ib.play svg{width:24px;height:24px}
+  .tab{padding:10px 15px;font-size:14px}
+  #msg{font-size:13px;padding:9px 14px}
+  .ib.pb{top:8px;right:8px;width:30px;height:30px}.ib.pb svg{width:20px;height:20px}
+  #title,#sub{padding:0 22px}
+  .plist{padding:8px;border-radius:26px}
+  .song{border-radius:26px}.head{padding:7px 14px 7px 7px;font-size:14px}.th{width:34px;height:34px}
+  .mx dl{font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -66,8 +117,10 @@ body{background:#05090c;color:#fff;font-family:Inter,-apple-system,BlinkMacSyste
 <nav class="tabs" id="tabs" role="tablist" aria-label="Playlists"><span class="pill" id="pill"></span></nav>
 
 <div class="dock">
+<div class="plist" id="plist" role="region" aria-label="Playlist"></div>
 <div id="msg" role="status"></div>
 <section class="player" aria-label="Music player">
+  <button class="ib pb" id="pbtn" type="button" aria-label="Playlist" aria-expanded="false" aria-controls="plist"><svg viewBox="0 0 24 24"><path class="o" d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></button>
   <h2 id="title">Song Name</h2>
   <p id="sub">Singer Name - Album Name</p>
   <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Seek">
@@ -101,6 +154,7 @@ const GENRES = [
 ];
 /* ===================== */
 const $=s=>document.querySelector(s);
+const plist=$('#plist');
 const ICON={play:'<svg viewBox="0 0 24 24"><path class="f" d="M8 5.5v13l11-6.5z"/></svg>',pause:'<svg viewBox="0 0 24 24"><path class="f" d="M7.5 5.5h3v13h-3zM13.5 5.5h3v13h-3z"/></svg>'};
 let gi=0, ti=0, yt, ready=false, st=-1, want=false, fails=0, shuffle=false, repeat=true, layer=0, order=[], plTrack=null, flags=false;
 const PL={}, isPL=()=>!!GENRES[gi].playlist, curT=()=>isPL()?(plTrack||{t:'',a:'',al:''}):GENRES[gi].tracks[order[ti]];
@@ -108,6 +162,7 @@ const fmt=t=>isFinite(t)&&t>0?Math.floor(t/60)+':'+String(Math.floor(t%60)).padS
 const toast=(m,ms=3500)=>{const e=$('#msg');e.textContent=m;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),ms)};
 const ERR={2:'That YouTube link is invalid.',5:'Your browser could not play this video.',100:'This video was removed or is private.',101:'The owner of this video blocks playback outside YouTube.',150:'The owner of this video blocks playback outside YouTube.',153:'YouTube blocked playback because the page has no web address. Open the site through a server (see README), not by double-clicking the file.'};
 $('#play').innerHTML=ICON.play;
+function paintPlay(force){plist.classList.toggle('on',force||st===1);const b=force||st===1||(want&&(st===3||st===5));$('#play').innerHTML=b?ICON.pause:ICON.play;$('#play').setAttribute('aria-label',b?'Pause':'Play')}
 
 /* tabs */
 const tabs=$('#tabs');
@@ -127,7 +182,9 @@ window.addEventListener('resize',movePill);
 
 /* background crossfade */
 function setBg(url){
-  const L=[$('#bgA'),$('#bgB')];layer^=1;
+  const L=[$('#bgA'),$('#bgB')];
+  if(L[layer].classList.contains('on')&&L[layer].getAttribute('src')===url)return;
+  layer^=1;
   L[layer].src=url;L[layer].classList.add('on');L[layer^1].classList.remove('on');
 }
 
@@ -148,15 +205,16 @@ function playTrack(){
   const g=GENRES[gi];
   if(g.playlist){
     if(!ready){toast('Player is loading, it will start in a moment');return}
-    flags=true;yt.loadPlaylist({list:g.playlist,listType:'playlist',index:0});return;
+    flags=true;try{yt.stopVideo()}catch(e){}   /* silence the old playlist right away so nothing stale plays or reports */
+    yt.loadPlaylist({list:g.playlist,listType:'playlist',index:0});paintPlay(true);return;
   }
   const s=g.tracks[order[ti]];
-  if(!s.yt){want=false;info();if(ready)yt.stopVideo();toast('No song added to this tab yet');return}
+  if(!s.yt){want=false;info();paintPlay();if(ready)yt.stopVideo();toast('No song added to this tab yet');return}
   if(!ready){toast('Player is loading, it will start in a moment');return}   /* want stays true: starts as soon as the player is ready */
-  yt.loadVideoById(s.yt);
+  yt.loadVideoById(s.yt);paintPlay(true);
 }
 function choose(i,autoplay){
-  gi=i;ti=0;fails=0;buildOrder();paintTabs();setBg(GENRES[i].bg);plTrack=null;info();
+  gi=i;ti=0;fails=0;buildOrder();paintTabs();setBg(GENRES[i].bg);plTrack=null;nowId='';info();drawPanel();
   if(autoplay)playTrack();else if(ready&&st>0){yt.stopVideo()}
 }
 function next(){
@@ -178,25 +236,144 @@ function toggle(){
 $('#play').onclick=toggle;$('#next').onclick=next;$('#prev').onclick=prev;
 $('#shuf').onclick=e=>{shuffle=!shuffle;e.currentTarget.setAttribute('aria-pressed',shuffle);if(isPL()){if(ready)yt.setShuffle(shuffle);return}const cur=order[ti];buildOrder();ti=order.indexOf(cur)};
 $('#rep').onclick=e=>{repeat=!repeat;e.currentTarget.setAttribute('aria-pressed',repeat);if(isPL()&&ready)yt.setLoop(repeat)};
-$('#seek').oninput=e=>{if(ready&&st>=0){const d=yt.getDuration();if(d)yt.seekTo(d*e.target.value/1000,true)}};
+let seeking=false,pending=null,hold=0,lastIn=0;
+const sk=$('#seek'),dur=()=>ready&&st>=0?yt.getDuration():0;
+function commit(){if(pending!==null){const d=dur();if(d)yt.seekTo(d*pending/1000,true);hold=Date.now()+900;pending=null}seeking=false}
+sk.addEventListener('pointerdown',()=>{seeking=true});
+sk.addEventListener('input',()=>{const d=dur();if(!d)return;pending=+sk.value;lastIn=Date.now();sk.style.setProperty('--p',pending/10+'%');$('#cur').textContent=fmt(d*pending/1000)});   /* preview only */
+sk.addEventListener('change',commit);                                                                   /* one seek on release */
+['pointerup','pointercancel'].forEach(t=>window.addEventListener(t,()=>{if(seeking)setTimeout(commit,30)}));
 
-/* song details: YouTube gives title + channel; the album is looked up from the title (iTunes search, no key needed) */
+/* song details: YouTube gives title + channel; album, year, genre and length are looked up from the title (iTunes search, no key needed) */
 const norm=x=>(x||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
 const tidy=x=>(x||'').replace(/\s*[\(\[][^\)\]]*[\)\]]/g,'').replace(/\b(official|lyrics?|audio|video|hd|4k)\b/gi,'').replace(/\s+/g,' ').replace(/[\s\-|]+$/,'').trim();
-async function fillMeta(s,vd){
-  if(s.meta)return;s.meta=1;
-  const own={t:!!s.t,a:!!s.a,al:!!s.al}, show=()=>{if(curT()===s)info()};
-  let song=tidy(vd.title),who=(vd.author||'').replace(/\s*-\s*Topic$|VEVO$/i,'').trim();
-  const m=song.match(/^(.+?)\s+[-–]\s+(.+)$/); if(m){who=m[1];song=m[2]}
-  if(!own.t)s.t=song; if(!own.a)s.a=who; show();
-  if(own.t&&own.a&&own.al)return;
-  try{
-    const r=await fetch('https://itunes.apple.com/search?entity=song&limit=5&term='+encodeURIComponent(song+' '+who));
-    const hit=(await r.json()).results.find(x=>{const n=norm(x.trackName);return n&&(norm(song).includes(n)||n.includes(norm(song)))});
-    if(hit){if(!own.t)s.t=hit.trackName;if(!own.a)s.a=hit.artistName;if(!own.al)s.al=hit.collectionName.replace(/\s+-\s+(Single|EP)$/i,'')}
-  }catch(e){}
-  show();
+const clean=a=>(a||'').replace(/\s*-\s*Topic$|VEVO$/i,'').trim();
+const touch=s=>{s.own=s.own||{t:!!s.t,a:!!s.a,al:!!s.al};return s};
+function setRaw(s,title,author){
+  touch(s);if(s.rawSong)return;
+  let song=tidy(title),who=clean(author);const m=song.match(/^(.+?)\s+[-–]\s+(.+)$/);if(m){who=m[1];song=m[2]}
+  s.rawSong=song;s.rawWho=who;s.chan=clean(author);
+  if(!s.own.t)s.t=song;if(!s.own.a)s.a=who;
 }
+async function album(s){
+  if(s.meta||!s.rawSong)return;s.meta=1;touch(s);
+  try{
+    {   /* always look up: typed details are never overwritten, but year, genre and length still get filled in */
+      const r=await fetch('https://itunes.apple.com/search?entity=song&limit=5&term='+encodeURIComponent(s.rawSong+' '+s.rawWho));
+      const hit=(await r.json()).results.find(x=>{const n=norm(x.trackName);return n&&(norm(s.rawSong).includes(n)||n.includes(norm(s.rawSong)))});
+      if(hit){
+        if(!s.own.t)s.t=hit.trackName;if(!s.own.a)s.a=hit.artistName;if(!s.own.al)s.al=hit.collectionName.replace(/\s+-\s+(Single|EP)$/i,'');
+        s.yr=(hit.releaseDate||'').slice(0,4);s.genre=hit.primaryGenreName||'';s.len=hit.trackTimeMillis?fmt(hit.trackTimeMillis/1000):'';
+      }
+    }
+  }catch(e){}
+  s.md=1;
+}
+async function fillMeta(s,vd){setRaw(s,vd.title,vd.author);const show=()=>{if(curT()===s)info()};show();await album(s);show()}
+
+/* ---------- playlist panel: every song as a pill; hover or tap to open its details ---------- */
+const pbtn=$('#pbtn'),PLIDS={},rows=new Map(),IDRE=/^[\w-]{11}$/;
+const canHover=!!(window.matchMedia&&matchMedia('(hover:hover)').matches);
+let nowId='',plKey='',hoverT=0;
+const thumb=(id,q)=>`https://i.ytimg.com/vi/${id}/${q}.jpg`;
+const ids=()=>{const g=GENRES[gi];return g.playlist?(PLIDS[g.playlist]||[]):g.tracks.map(t=>t.yt).filter(Boolean)};
+const songObj=id=>GENRES[gi].tracks.find(t=>t.yt===id)||(PL[id]=PL[id]||{t:'',a:'',al:''});
+const io='IntersectionObserver' in window?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){io.unobserve(e.target);rowTitle(e.target.dataset.id)}}),{root:plist,rootMargin:'160px'}):null;
+
+async function oembed(id){   /* title + channel of any YouTube video */
+  const u=encodeURIComponent('https://www.youtube.com/watch?v='+id);
+  for(const b of ['https://www.youtube.com/oembed?format=json&url=','https://noembed.com/embed?url=']){
+    try{const r=await fetch(b+u);if(!r.ok)continue;const j=await r.json();if(j&&j.title)return j}catch(e){}
+  }
+  return null;
+}
+function rowTitle(id){
+  const s=touch(songObj(id));
+  s.rp=s.rp||(async()=>{if(!s.rawSong){const j=await oembed(id);if(j)setRaw(s,j.title,j.author_name)}s.rd=1;paintRow(id)})();
+  return s.rp;
+}
+function paintRow(id){
+  const r=rows.get(id);if(!r)return;const s=songObj(id);
+  r.nm.textContent=s.t||(s.rd?'YouTube video':'Loading…');
+  const e=[['Singer',s.a||'—'],['Album',s.al||(s.md?'—':'Looking up…')]];
+  if(s.yr)e.push(['Released',s.yr]);if(s.genre)e.push(['Genre',s.genre]);if(s.len)e.push(['Length',s.len]);
+  if(s.chan&&norm(s.chan)!==norm(s.a))e.push(['Channel',s.chan]);
+  r.dl.replaceChildren(...e.flatMap(([k,v])=>{const a=document.createElement('dt'),b=document.createElement('dd');a.textContent=k;b.textContent=v;return [a,b]}));   /* textContent only: titles are untrusted text */
+}
+function closeRow(id){const r=rows.get(id);if(!r)return;r.el.classList.remove('open');r.head.setAttribute('aria-expanded','false')}
+function openRow(id){
+  rows.forEach((r,k)=>{if(k!==id)closeRow(k)});
+  const r=rows.get(id);if(!r||r.el.classList.contains('open'))return;
+  r.el.classList.add('open');r.head.setAttribute('aria-expanded','true');
+  if(!r.big.getAttribute('src'))r.big.src=thumb(id,'hqdefault');
+  rowTitle(id).then(()=>album(songObj(id))).then(()=>paintRow(id));
+  setTimeout(()=>{try{r.el.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}},80);
+}
+function buildRow(id){
+  const el=document.createElement('div');el.className='song';el.dataset.id=id;
+  const head=document.createElement('button');head.className='head';head.type='button';head.setAttribute('aria-expanded','false');
+  const th=new Image();th.className='th';th.alt='';th.loading='lazy';th.src=thumb(id,'mqdefault');
+  const nm=document.createElement('span');nm.className='nm';
+  const eq=document.createElement('span');eq.className='eq';eq.innerHTML='<b></b><b></b><b></b>';
+  head.append(th,nm,eq);
+  const big=new Image();big.className='big';big.alt='';
+  const dl=document.createElement('dl'),acts=document.createElement('div');acts.className='acts';
+  const pl=document.createElement('button');pl.className='act';pl.type='button';pl.textContent='▶ Play';
+  const yl=document.createElement('a');yl.className='act';yl.href='https://www.youtube.com/watch?v='+id;yl.target='_blank';yl.rel='noopener noreferrer';yl.textContent='Watch on YouTube ↗';
+  acts.append(pl,yl);
+  const mx=document.createElement('div');mx.className='mx';mx.append(big,dl,acts);
+  const mi=document.createElement('div');mi.className='mi';mi.append(mx);
+  const more=document.createElement('div');more.className='more';more.append(mi);
+  el.append(head,more);rows.set(id,{el,nm,dl,big,head});
+  head.onclick=()=>canHover?openRow(id):(el.classList.contains('open')?closeRow(id):openRow(id));   /* desktop: hover opens, click keeps it open; touch: tap toggles */
+  if(canHover){el.addEventListener('mouseenter',()=>{clearTimeout(hoverT);hoverT=setTimeout(()=>openRow(id),140)});el.addEventListener('mouseleave',()=>clearTimeout(hoverT))}
+  pl.onclick=()=>playSong(id);
+  paintRow(id);plist.append(el);
+  if(io)io.observe(el);else if(rows.size<=20)rowTitle(id);
+}
+function drawPanel(){
+  if(!plist.classList.contains('open'))return;
+  const list=ids(),key=gi+'|'+list.join();
+  if(key!==plKey){
+    plKey=key;rows.clear();plist.replaceChildren();
+    if(!list.length){const m=document.createElement('p');m.className='empty';m.textContent=GENRES[gi].playlist?'Loading this playlist… press play if nothing appears.':'No songs in this tab yet.';plist.append(m)}
+    else list.forEach(id=>{if(IDRE.test(id))buildRow(id)});
+  }
+  markNow();
+}
+function markNow(){rows.forEach((r,k)=>r.el.classList.toggle('now',k===nowId))}
+function sizePanel(){const dock=$('.dock'),b=parseFloat(getComputedStyle(dock).bottom)||0;plist.style.maxHeight=Math.max(160,innerHeight-dock.offsetHeight-b-14-96)+'px'}
+function setPanel(on){
+  plist.classList.toggle('open',on);pbtn.setAttribute('aria-expanded',on);
+  if(!on)return;
+  sizePanel();plKey='';
+  const g=GENRES[gi];
+  if(g.playlist&&!(PLIDS[g.playlist]||[]).length&&ready&&!want)yt.cuePlaylist({listType:'playlist',list:g.playlist});   /* load the list without playing it */
+  drawPanel();
+  const r=rows.get(nowId);if(r)plist.scrollTop=Math.max(0,r.el.offsetTop-plist.clientHeight/3);
+}
+function grabIds(){   /* remember the playlist's song ids once YouTube has loaded it */
+  const g=GENRES[gi];if(!g.playlist)return;
+  const l=yt.getPlaylist(),vd=yt.getVideoData();
+  if(l&&l.length&&vd&&l.includes(vd.video_id)&&(PLIDS[g.playlist]||[]).join()!==l.join()){PLIDS[g.playlist]=l.slice();drawPanel()}
+}
+function playSong(id){
+  if(!ready){toast('Player is loading, try again in a moment');return}
+  const g=GENRES[gi];want=true;plTrack=null;
+  if(g.playlist){
+    const idx=(PLIDS[g.playlist]||[]).indexOf(id);if(idx<0)return;
+    info();paintPlay(true);
+    if([1,2,3].includes(st))yt.playVideoAt(idx);
+    else{flags=true;yt.loadPlaylist({list:g.playlist,listType:'playlist',index:idx})}
+    return;
+  }
+  const k=g.tracks.findIndex(t=>t.yt===id);if(k<0)return;
+  ti=Math.max(0,order.indexOf(k));playTrack();
+}
+pbtn.onclick=()=>setPanel(!plist.classList.contains('open'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&plist.classList.contains('open'))setPanel(false)});
+document.addEventListener('pointerdown',e=>{if(plist.classList.contains('open')&&e.target.closest&&!e.target.closest('.dock,.tabs'))setPanel(false)});
+window.addEventListener('resize',()=>{if(plist.classList.contains('open'))sizePanel()});
 
 /* YouTube (audio from a hidden embed) */
 const tag=document.createElement('script');tag.src='https://www.youtube.com/iframe_api';document.head.appendChild(tag);
@@ -207,14 +384,16 @@ window.onYouTubeIframeAPIReady=()=>{
     onReady:()=>{ready=true;if(want)playTrack()},
     onStateChange:e=>{
       st=e.data;const p=st===1;
-      $('#play').innerHTML=p?ICON.pause:ICON.play;$('#play').setAttribute('aria-label',p?'Pause':'Play');
+      paintPlay();
+      if(st===5&&isPL())grabIds();
       if(p){
         fails=0;
-        const vd=yt.getVideoData();
+        const vd=yt.getVideoData();nowId=(vd&&vd.video_id)||'';
         if(isPL()){
           if(flags){flags=false;yt.setLoop(repeat);if(shuffle)yt.setShuffle(true)}
-          const k=vd&&vd.video_id;if(k){PL[k]=PL[k]||{t:'',a:'',al:''};if(plTrack!==PL[k]){plTrack=PL[k];info()}}
+          const k=vd&&vd.video_id;if(k){PL[k]=PL[k]||{t:'',a:'',al:''};if(plTrack!==PL[k]){plTrack=PL[k];info();yt.setLoop(repeat)}}
         }
+        if(isPL())grabIds();markNow();
         const s=curT();if(vd&&s)fillMeta(s,vd);
       }
       if(st===0&&want){   /* song ended: continue until the user stops it */
@@ -235,7 +414,11 @@ if('mediaSession' in navigator){const m=navigator.mediaSession;m.setActionHandle
 setInterval(()=>{
   if(!ready||st<0)return;
   const d=yt.getDuration(),c=yt.getCurrentTime();
-  if(d){const s=$('#seek');s.value=c/d*1000;s.style.setProperty('--p',c/d*100+'%');$('#cur').textContent=fmt(c);$('#dur').textContent=fmt(d)}
+  if(!d)return;
+  $('#dur').textContent=fmt(d);
+  if(pending!==null&&Date.now()-lastIn>1500)commit();                 /* safety: a drag whose release was missed */
+  if(seeking||pending!==null||Date.now()<hold)return;                            /* don't fight the finger or a seek in progress */
+  sk.value=c/d*1000;sk.style.setProperty('--p',c/d*100+'%');$('#cur').textContent=fmt(c);
 },500);
 
 if(location.protocol==='file:')toast('Open this site through a server, not by double-clicking the file. YouTube blocks playback from file://. See README.',12000);
