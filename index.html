@@ -160,6 +160,53 @@ body.isext .player,body.isext .plist{display:none!important}
 .pnext .act{display:block;max-width:min(380px,calc(100vw - 80px));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(255,255,255,.28)}
 #ythv{position:fixed;right:0;bottom:0;width:200px;height:200px;z-index:-1;pointer-events:none}
 @media(max-width:600px){.ptab{font-size:12px;padding:8px 10px}.ar{font-size:12px}.pnext{font-size:13px}}
+/* ===== Phase 2: make your own mood box (same glass theme) ===== */
+.gbtn{position:fixed;top:max(22px,env(safe-area-inset-top));z-index:6;display:inline-flex;align-items:center;justify-content:center;height:52px;padding:0 22px;border:1px solid var(--edge);border-radius:999px;background:rgba(20,30,70,.28);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);box-shadow:0 8px 30px rgba(0,0,30,.25),inset 0 1px 0 rgba(255,255,255,.22);color:#fff;font:600 14px/1 Inter,-apple-system,sans-serif;white-space:nowrap;cursor:pointer;transition:background .25s,transform .15s}
+.gbtn[hidden]{display:none}
+.gbtn:hover{background:rgba(40,55,110,.4)}
+.gbtn:active{transform:scale(.97)}
+.gbtn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+#mineBtn{right:max(18px,env(safe-area-inset-right))}
+#ogBtn{left:max(18px,env(safe-area-inset-left))}
+.gbtn .bs{display:none}
+@media(max-width:1260px){body.pg-og .tabs{top:calc(max(22px,env(safe-area-inset-top)) + 64px)}}
+@media(max-width:720px){body.pg-mine .tabs{top:calc(max(22px,env(safe-area-inset-top)) + 64px)}}
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(0,5,20,.38);opacity:0;visibility:hidden;transition:opacity .3s ease,visibility 0s linear .3s}
+.scrim.on{opacity:1;visibility:visible;transition-delay:0s}
+.side{position:fixed;top:0;right:0;bottom:0;z-index:41;width:min(400px,100vw);padding:max(24px,env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom,0px));overflow-y:auto;overscroll-behavior:contain;border-radius:32px 0 0 32px;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.06)),rgba(12,20,40,.5);backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);border:1px solid rgba(255,255,255,.3);border-right:0;box-shadow:-18px 0 50px rgba(0,10,60,.28),inset 0 1px 0 rgba(255,255,255,.2);transform:translateX(105%);visibility:hidden;transition:transform .45s cubic-bezier(.2,.9,.3,1),visibility 0s linear .45s}
+.side.open{transform:none;visibility:visible;transition-delay:0s}
+.sidehead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+.sidehead h2{margin:0;font-size:22px;line-height:28px;font-weight:600}
+.side .sub{margin:0 0 20px;font-size:14px;line-height:1.4;color:rgba(255,255,255,.8);font-weight:300}
+.fld{display:block;margin:0 0 18px}
+.fld>span{display:block;margin:0 0 8px 4px;font-size:13px;font-weight:600;letter-spacing:.01em}
+.fld>span em{font-style:normal;font-weight:300;opacity:.8}
+.fld small{display:block;margin:7px 4px 0;font-size:12px;line-height:1.35;font-weight:300;color:rgba(255,255,255,.78)}
+.fld input[type=text]{display:block;width:100%;padding:14px 18px;border:1px solid rgba(255,255,255,.22);border-radius:20px;background:rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.18);color:#fff;font:400 15px/1.2 Inter,-apple-system,sans-serif;transition:background .25s,border-color .25s}
+.fld input::placeholder{color:rgba(255,255,255,.5)}
+.fld input[type=text]:focus{outline:0;background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.7)}
+.drop{display:flex;align-items:center;gap:12px;padding:10px;border:1px dashed rgba(255,255,255,.4);border-radius:22px;background:rgba(255,255,255,.07);cursor:pointer;transition:background .25s,border-color .25s}
+.drop:hover,.drop:focus-within{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.75)}
+.drop img{width:64px;height:44px;border-radius:14px;object-fit:cover;flex:none;background:rgba(255,255,255,.12)}
+.drop img[hidden]{display:none}
+.drop .dt{flex:1;min-width:0;padding:0 6px;font-size:14px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);border:0}
+.linkb{display:block;margin:10px 4px 0;padding:6px 0;border:0;background:none;color:rgba(255,255,255,.85);font:600 13px/1 Inter,-apple-system,sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.linkb[hidden]{display:none}
+.linkb:hover{color:#fff}.linkb:focus-visible{outline:2px solid #fff;outline-offset:3px;border-radius:4px}
+.ferr{min-height:20px;margin:0 4px 12px;font-size:13px;line-height:1.4;color:#ffd0d0;font-weight:600}
+.create{position:relative;display:block;width:100%;height:54px;border:0;border-radius:999px;background:linear-gradient(145deg,rgba(255,255,255,.34),rgba(255,255,255,.08) 65%,rgba(255,255,255,.16));box-shadow:0 10px 24px rgba(0,10,40,.3),inset 0 1px 0 rgba(255,255,255,.45);color:#fff;font:600 16px/1 Inter,-apple-system,sans-serif;cursor:pointer;transition:background .25s,transform .15s}
+.create:hover{background:linear-gradient(145deg,rgba(255,255,255,.42),rgba(255,255,255,.12) 65%,rgba(255,255,255,.2))}
+.create:active{transform:scale(.98)}
+.create:disabled{opacity:.6;cursor:default}
+.create:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media(max-width:600px){
+  .gbtn{height:46px;padding:0 16px;font-size:13px}
+  .gbtn .bl{display:none}.gbtn .bs{display:inline}
+  .side{width:100vw;border-radius:0;border-left:0}
+  body.pg-og .tabs{top:calc(max(22px,env(safe-area-inset-top)) + 58px)}
+  body.pg-mine .tabs{top:calc(max(22px,env(safe-area-inset-top)) + 58px)}
+}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -192,6 +239,26 @@ body.isext .player,body.isext .plist{display:none!important}
 </div>
 <p class="credit">Your vibe, my craft ❤️ — <a href="https://dribbble.com/abhidedania" target="_blank" rel="noopener noreferrer">Abhi Dedania</a></p>
 <div id="yt"></div>
+<button class="gbtn" id="ogBtn" type="button" hidden>← OG Page</button>
+<button class="gbtn" id="mineBtn" type="button"><span class="bl">+ Make your own mood box</span><span class="bs">+ Mood box</span></button>
+<div class="scrim" id="scrim"></div>
+<aside class="side" id="side" role="dialog" aria-modal="true" aria-labelledby="sideT" aria-hidden="true">
+  <div class="sidehead"><h2 id="sideT">Make your own mood box</h2><button class="ib" id="sideX" type="button" aria-label="Close"><svg viewBox="0 0 24 24"><path class="o" d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <p class="sub">Your own tab with your own playlist. It is saved in this browser only.</p>
+  <form id="mform" novalidate>
+    <label class="fld"><span>Mood name</span><input id="fName" type="text" maxlength="24" placeholder="e.g. Midnight Drive" autocomplete="off"></label>
+    <label class="fld"><span>Playlist link</span><input id="fLink" type="text" inputmode="url" placeholder="https://music.youtube.com/playlist?list=…" autocomplete="off" autocapitalize="off" spellcheck="false"><small>YouTube or YouTube Music playlists only.</small></label>
+    <div class="fld"><span>Background <em>(optional)</em></span>
+      <label class="drop" for="fBg"><img id="bgPrev" alt="" hidden><span class="dt" id="bgTxt">Choose a PNG, JPG or GIF</span></label>
+      <input class="sr" id="fBg" type="file" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif">
+      <button class="linkb" id="bgClear" type="button" hidden>Remove background</button>
+    </div>
+    <p class="ferr" id="ferr" role="alert"></p>
+    <button class="create" id="fGo" type="submit">Create</button>
+    <button class="linkb" id="fDel" type="button" hidden>Delete my mood box</button>
+  </form>
+</aside>
+
 
 <script>
 /* ===== EDIT HERE =====
@@ -258,12 +325,14 @@ function paintPlay(force){plist.classList.toggle('on',force||st===1);const b=for
 
 /* tabs */
 const tabs=$('#tabs');
+function buildTabs(){tabs.querySelectorAll('.tab').forEach(b=>b.remove());
 GENRES.forEach((g,i)=>{
   const b=document.createElement('button');
   b.className='tab';b.setAttribute('role','tab');b.textContent=g.name;b.dataset.t=g.name;
   b.onclick=()=>{if(i===gi)return;choose(i,armed)};   /* armed = the user has pressed play at least once */
   tabs.appendChild(b);
-});
+});}
+buildTabs();
 function movePill(){
   const b=tabs.querySelectorAll('.tab')[gi],p=$('#pill');
   p.style.left=b.offsetLeft+'px';p.style.width=b.offsetWidth+'px';
@@ -279,7 +348,8 @@ window.__asset=(name,u)=>{EMBEDS['asset:'+name]=u;fillBgs()};
 const isVid=u=>/\.(mp4|webm|m4v|mov)(\?|#|$)/i.test(u)||/^data:video\//.test(u);
 const srcOf=u=>/^(asset:|embedded$)/.test(u)?(EMBEDS[u]||null):u;
 const bgBox=$('#bgs'),bgL=[];let bgCur=-1,bgShown=-1;
-GENRES.forEach(g=>{const d=document.createElement('div');d.className='bg';bgBox.appendChild(d);bgL.push({d,list:[].concat(g.bg),k:-1,ready:false,bad:new Set()})});
+function buildBgs(){bgBox.replaceChildren();bgL.length=0;bgCur=-1;bgShown=-1;GENRES.forEach(g=>{const d=document.createElement('div');d.className='bg';bgBox.appendChild(d);bgL.push({d,list:[].concat(g.bg),k:-1,ready:false,bad:new Set()})})}
+buildBgs();
 function bgApply(){
   const L=bgL[bgCur];
   if(L&&L.ready)bgShown=bgCur;
@@ -961,6 +1031,149 @@ function drawUp(){
   queue.forEach(id=>kids.push(recRow(id,false)));
   ups.replaceChildren(...kids);
 }
+
+/* ===================== PHASE 2: MAKE YOUR OWN MOOD BOX =====================
+   Two pages: the original one (OG Page, always the default) and a personal page with one tab made by the visitor.
+   The personal mood box (name, playlist id and optional background) is kept in this browser only:
+   details in localStorage, the background image in IndexedDB. Nothing is uploaded anywhere. */
+const OG=GENRES.slice();
+let page='og',mine=null,sideFrom=null,bgState={blob:null,remove:false},prevUrl='',delArmed=0;
+const mdb=()=>new Promise((res,rej)=>{try{const r=indexedDB.open('moodbox',1);r.onupgradeneeded=()=>r.result.createObjectStore('bg');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
+async function bgPut(blob){const db=await mdb();return new Promise((res,rej)=>{const tx=db.transaction('bg','readwrite');if(blob)tx.objectStore('bg').put(blob,'mine');else tx.objectStore('bg').delete('mine');tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+async function bgGet(){const db=await mdb();return new Promise((res,rej)=>{const q=db.transaction('bg').objectStore('bg').get('mine');q.onsuccess=()=>res(q.result||null);q.onerror=()=>rej(q.error)})}
+const saveMine=()=>{try{if(mine)localStorage.setItem('mb-mine',JSON.stringify({name:mine.name,playlist:mine.playlist,hasBg:!!mine.hasBg}));else localStorage.removeItem('mb-mine')}catch(e){}};
+try{const m=JSON.parse(localStorage.getItem('mb-mine')||'null');if(m&&m.name&&/^[\w-]{10,64}$/.test(m.playlist||''))mine={name:String(m.name).slice(0,24),playlist:m.playlist,hasBg:!!m.hasBg,url:''}}catch(e){}
+const mineReady=(async()=>{if(mine&&mine.hasBg){try{const b=await bgGet();if(b)mine.url=URL.createObjectURL(b);else mine.hasBg=false}catch(e){mine.hasBg=false}}})();
+const mineGenre=()=>({name:mine.name,bg:mine.url?[mine.url,'embedded']:ART('mood'),playlist:mine.playlist,tracks:[]});
+
+/* ---- the two top buttons ---- */
+const ogBtn=$('#ogBtn'),mineBtn=$('#mineBtn'),side=$('#side'),scrim=$('#scrim'),fName=$('#fName'),fLink=$('#fLink'),fBg=$('#fBg'),ferr=$('#ferr'),fGo=$('#fGo'),fDel=$('#fDel');
+function paintGate(){
+  document.body.classList.toggle('pg-mine',page==='mine');document.body.classList.toggle('pg-og',page==='og');
+  ogBtn.hidden=page!=='mine';
+  const L=page==='mine'?['✎ Edit my mood box','✎ Edit']:mine?['My mood box','Mine']:['+ Make your own mood box','+ Mood box'];
+  mineBtn.innerHTML='<span class="bl"></span><span class="bs"></span>';
+  mineBtn.firstChild.textContent=L[0];mineBtn.lastChild.textContent=L[1];
+  mineBtn.setAttribute('aria-label',L[0].replace(/^[+✎]\s*/,''));
+}
+async function applyPage(p,autoplay){
+  if(p==='mine'){await mineReady;if(!mine)p='og'}
+  page=p;
+  setPanel(false);
+  GENRES.splice(0,GENRES.length,...(p==='mine'?[mineGenre()]:OG));
+  [PROF,profLabel,prepAt].forEach(o=>Object.keys(o).forEach(k=>delete o[k]));   /* per-tab analysis belongs to the old page */
+  plKey='';
+  buildTabs();buildBgs();fillBgs();paintGate();
+  choose(0,autoplay);
+}
+const setPage=p=>p===page?Promise.resolve():applyPage(p,armed);
+ogBtn.onclick=()=>setPage('og');
+mineBtn.onclick=()=>{if(page==='og'&&mine)setPage('mine');else openSide()};
+paintGate();
+
+/* ---- slide-out sidebar ---- */
+const err=m=>{ferr.textContent=m||''};
+function setPrev(url,text){
+  if(prevUrl&&prevUrl.startsWith('blob:')&&prevUrl!==(mine&&mine.url))URL.revokeObjectURL(prevUrl);
+  prevUrl=url||'';const im=$('#bgPrev');
+  if(url){im.src=url;im.hidden=false}else{im.removeAttribute('src');im.hidden=true}
+  $('#bgTxt').textContent=text||'Choose a PNG, JPG or GIF';
+  $('#bgClear').hidden=!url;
+}
+function openSide(){
+  sideFrom=document.activeElement;
+  const edit=page==='mine'&&!!mine;
+  $('#sideT').textContent=edit?'Edit your mood box':'Make your own mood box';
+  fGo.textContent=edit?'Save changes':'Create';fGo.disabled=false;
+  fName.value=edit?mine.name:'';
+  fLink.value=edit?'https://www.youtube.com/playlist?list='+mine.playlist:'';
+  bgState={blob:null,remove:false};setPrev(edit&&mine.url?mine.url:'',edit&&mine.url?'Current background':'');
+  fDel.hidden=!edit;fDel.textContent='Delete my mood box';delArmed=0;err('');
+  setPanel(false);
+  scrim.classList.add('on');side.classList.add('open');side.setAttribute('aria-hidden','false');
+  setTimeout(()=>fName.focus(),60);
+}
+function closeSide(){
+  if(!side.classList.contains('open'))return;
+  side.classList.remove('open');scrim.classList.remove('on');side.setAttribute('aria-hidden','true');
+  try{if(sideFrom&&sideFrom.focus)sideFrom.focus()}catch(e){}
+}
+scrim.onclick=closeSide;$('#sideX').onclick=closeSide;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSide()});
+
+/* ---- background picker: PNG, JPG or GIF only ---- */
+async function prepImage(f){
+  const bmp=await createImageBitmap(f);   /* throws if the file isn't really an image */
+  if(f.type==='image/gif')return f;       /* keep GIFs untouched so they keep animating */
+  const sc=Math.min(1,2200/Math.max(bmp.width,bmp.height));
+  if(sc===1&&f.size<2.5e6)return f;
+  const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
+  const x=c.getContext('2d');x.fillStyle='#05090c';x.fillRect(0,0,c.width,c.height);x.drawImage(bmp,0,0,c.width,c.height);
+  return new Promise(r=>c.toBlob(b=>r(b||f),'image/jpeg',.88));
+}
+fBg.onchange=async()=>{
+  const f=fBg.files&&fBg.files[0];fBg.value='';if(!f)return;err('');
+  const type=f.type||(/\.gif$/i.test(f.name)?'image/gif':/\.png$/i.test(f.name)?'image/png':/\.jpe?g$/i.test(f.name)?'image/jpeg':'');
+  if(!/^image\/(png|jpeg|gif)$/.test(type)){err('Please choose a PNG, JPG or GIF image.');return}
+  if(f.size>10e6||(type==='image/gif'&&f.size>8e6)){err('That image is too large. Please keep it under '+(type==='image/gif'?8:10)+' MB.');return}
+  try{
+    const blob=await prepImage(new File([f],f.name,{type}));
+    bgState={blob,remove:false};setPrev(URL.createObjectURL(blob),f.name);
+  }catch(e){err('That file couldn’t be read as an image.')}
+};
+$('#bgClear').onclick=()=>{bgState={blob:null,remove:true};setPrev('','')};
+
+/* ---- the playlist link: YouTube or YouTube Music playlists only ---- */
+function parseYtList(v){
+  v=String(v||'').trim();if(!v)return {err:'Paste a YouTube or YouTube Music playlist link.'};
+  let u;try{u=new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(v)?v:'https://'+v)}catch(e){return {err:'That doesn’t look like a link.'}}
+  const h=u.hostname.toLowerCase().replace(/^(www|m|music)\./,'');
+  if(!/^https?:$/.test(u.protocol)||(h!=='youtube.com'&&h!=='youtu.be'))return {err:'Only YouTube or YouTube Music playlist links work here.'};
+  const id=u.searchParams.get('list');
+  if(!id)return {err:'That link has no playlist in it. Open the playlist and copy its link (it contains “list=”).'};
+  if(!/^[\w-]{10,64}$/.test(id)||/^RD/.test(id)||['LL','WL','LM'].includes(id))return {err:'That is a Mix or a personal list, which can’t be played here. Use a regular playlist link.'};
+  return {id};
+}
+async function playlistExists(id){   /* soft check: only a clear "not found" blocks; network trouble never does */
+  try{
+    const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);
+    const r=await fetch('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent('https://www.youtube.com/playlist?list='+id),{signal:c.signal});
+    clearTimeout(t);return !(r.status===404||r.status===400);
+  }catch(e){return true}
+}
+
+/* ---- Create / Save ---- */
+$('#mform').onsubmit=async e=>{
+  e.preventDefault();err('');
+  const name=fName.value.trim().replace(/\s+/g,' ');
+  if(!name){err('Give your mood a name.');fName.focus();return}
+  const pl=parseYtList(fLink.value);if(pl.err){err(pl.err);fLink.focus();return}
+  const edit=page==='mine'&&!!mine,label=fGo.textContent;
+  fGo.disabled=true;fGo.textContent='Checking…';
+  if(!(await playlistExists(pl.id))){fGo.disabled=false;fGo.textContent=label;err('YouTube couldn’t find that playlist. Check the link, and make sure the playlist is public or unlisted.');fLink.focus();return}
+  const next={name,playlist:pl.id,hasBg:edit?mine.hasBg:false,url:edit?mine.url:''};
+  let kept=true;
+  try{
+    if(bgState.blob){await bgPut(bgState.blob);next.hasBg=true}
+    else if(bgState.remove){await bgPut(null);next.hasBg=false}
+  }catch(x){kept=false}
+  if(bgState.blob){if(next.url&&next.url!==prevUrl)URL.revokeObjectURL(next.url);next.url=URL.createObjectURL(bgState.blob);if(!kept)next.hasBg=false}
+  else if(bgState.remove){if(next.url)URL.revokeObjectURL(next.url);next.url=''}
+  if(prevUrl.startsWith('blob:')&&prevUrl!==next.url)URL.revokeObjectURL(prevUrl);
+  prevUrl=next.url;mine=next;saveMine();
+  closeSide();
+  await applyPage('mine',armed);
+  toast(!kept?'Your mood box is ready. Your background will only last until you close this tab.':armed?'Your mood box is ready.':'Your mood box is ready. Press play.',5000);
+};
+fDel.onclick=async()=>{
+  if(!delArmed){delArmed=1;fDel.textContent='Tap again to delete for good';return}
+  try{await bgPut(null)}catch(x){}
+  if(mine&&mine.url)URL.revokeObjectURL(mine.url);
+  mine=null;saveMine();closeSide();
+  await applyPage('og',armed);
+  toast('Your mood box was deleted.',4000);
+};
+
 
 if(location.protocol==='file:')toast('Open this site through a server, not by double-clicking the file. YouTube blocks playback from file://. See README.',12000);
 choose(0,false);
