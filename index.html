@@ -135,6 +135,31 @@ body.isext .player,body.isext .plist{display:none!important}
   .song{border-radius:26px}.head{padding:7px 14px 7px 7px;font-size:14px}.th{width:34px;height:34px}
   .mx dl{font-size:13px}
 }
+/* ===== Smart Autoplay & recommendations (additive) ===== */
+#auto[aria-pressed=false]{opacity:.6}
+.ptabs{display:flex;gap:6px;padding:0 10px 10px}
+.ptab{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border:0;border-radius:999px;background:rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.22);color:#fff;font:600 13px/1 Inter,-apple-system,sans-serif;cursor:pointer;transition:background .25s}
+.ptab:hover{background:rgba(255,255,255,.18)}
+.ptab[aria-selected=true]{background:rgba(255,255,255,.28)}
+.ptab:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.ptab .cnt{font-weight:400;opacity:.85}
+.pls[hidden]{display:none}
+.upt{margin:2px 12px 10px;font-size:13px;line-height:1.35;color:rgba(255,255,255,.82);text-align:left}
+.upa{margin:0 4px 12px}
+.act:disabled{opacity:.45;cursor:default}
+.act:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.song.rec{display:flex;align-items:center}
+.song.rec .head{flex:1;min-width:0;width:auto}
+.nm2{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ar{font-weight:300;font-size:12.5px;line-height:1.2;color:rgba(255,255,255,.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rx{flex:none;width:28px;height:28px;margin-right:10px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:13px;line-height:1;cursor:pointer}
+.rx:hover{background:rgba(255,255,255,.26)}
+.rx:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.pnext{position:absolute;z-index:3;left:50%;bottom:calc(100% + 14px);width:max-content;max-width:calc(100vw - 24px);transform:translate(-50%,56px);display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 18px;border-radius:22px;text-align:center;font-size:14px;line-height:1.35;background:rgba(20,30,40,.55);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border:1px solid var(--edge);box-shadow:0 10px 30px rgba(0,0,0,.3);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease,transform .4s cubic-bezier(.2,.9,.3,1),visibility 0s linear .4s}
+.pnext.show{opacity:1;visibility:visible;transform:translate(-50%,0);pointer-events:auto;transition-delay:0s}
+.pnext .act{display:block;max-width:min(380px,calc(100vw - 80px));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(255,255,255,.28)}
+#ythv{position:fixed;right:0;bottom:0;width:200px;height:200px;z-index:-1;pointer-events:none}
+@media(max-width:600px){.ptab{font-size:12px;padding:8px 10px}.ar{font-size:12px}.pnext{font-size:13px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -144,12 +169,14 @@ body.isext .player,body.isext .plist{display:none!important}
 <nav class="tabs" id="tabs" role="tablist" aria-label="Playlists"><span class="pill" id="pill"></span></nav>
 
 <div class="dock">
-<div class="plist" id="plist" role="region" aria-label="Playlist"><div class="pls" id="pls"></div></div>
+<div class="plist" id="plist" role="region" aria-label="Playlist"><div class="ptabs" id="ptabs" role="tablist" aria-label="Playlist view"><button class="ptab" id="ptL" type="button" role="tab" aria-selected="true">Playlist</button><button class="ptab" id="ptU" type="button" role="tab" aria-selected="false">Up next <span class="cnt" id="ucnt"></span></button></div><div class="pls" id="pls"></div><div class="pls" id="ups" hidden></div></div>
 <div id="msg" role="status"></div>
+<div class="pnext" id="pnext" role="status"><span>Your browser blocked autoplay.</span><button class="act" id="pnBtn" type="button">▶ Play next</button></div>
 <div class="ext" id="ext" aria-label="Player"></div>
 <section class="player" aria-label="Music player">
   <div class="phead">
     <div class="pmeta"><h2 id="title">Song Name</h2><p id="sub">Singer Name - Album Name</p></div>
+    <button class="ib tog pb" id="auto" type="button" aria-pressed="true" aria-label="Autoplay" title="Autoplay: keep playing similar songs when the playlist ends"><svg viewBox="0 0 24 24"><path class="o" d="M6 8a4 4 0 1 0 0 8c4 0 8-8 12-8a4 4 0 1 1 0 8c-4 0-8-8-12-8z"/></svg></button>
     <button class="ib pb" id="pbtn" type="button" aria-label="Playlist" aria-expanded="false" aria-controls="plist"><svg viewBox="0 0 24 24"><path class="o" d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></button>
   </div>
   <input type="range" id="seek" min="0" max="1000" value="0" aria-label="Seek">
@@ -219,10 +246,10 @@ GENRES.forEach(g=>{
 const $=s=>document.querySelector(s);
 const plist=$('#plist'),pls=$('#pls');
 const ICON={play:'<svg viewBox="0 0 24 24"><path class="f" d="M8 5.5v13l11-6.5z"/></svg>',pause:'<svg viewBox="0 0 24 24"><path class="f" d="M7.5 5.5h3v13h-3zM13.5 5.5h3v13h-3z"/></svg>'};
-let gi=0, ti=0, yt, ready=false, st=-1, want=false, fails=0, shuffle=false, repeat=true, order=[], plTrack=null, flags=false, armed=false, cued=null;
+let gi=0, ti=0, yt, ready=false, st=-1, want=false, fails=0, shuffle=false, repeat=true, order=[], plTrack=null, flags=false, armed=false, cued=null, auto=false, autoOn=true;
 const failIds=new Set(),RES={};let plSeq=0;   /* songs YouTube refused to play in the current playlist */
 const isExt=()=>!!GENRES[gi].ext;
-const PL={}, isPL=()=>!!GENRES[gi].playlist, curT=()=>isPL()?(plTrack||{t:'',a:'',al:''}):GENRES[gi].tracks[order[ti]];
+const PL={}, isPL=()=>!auto&&!!GENRES[gi].playlist, curT=()=>auto?(PL[autoCur]||{t:'',a:'',al:''}):isPL()?(plTrack||{t:'',a:'',al:''}):GENRES[gi].tracks[order[ti]];
 const fmt=t=>isFinite(t)&&t>0?Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0'):'0:00';
 const toast=(m,ms=3500)=>{const e=$('#msg');e.textContent=m;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),ms)};
 const ERR={2:'That YouTube link is invalid.',5:'Your browser could not play this video.',100:'This video was removed or is private.',101:'The owner of this video blocks playback outside YouTube.',150:'The owner of this video blocks playback outside YouTube.',153:'YouTube blocked playback because the page has no web address. Open the site through a server (see README), not by double-clicking the file.'};
@@ -282,10 +309,12 @@ function info(){
   const s=curT();
   $('#title').textContent=s.t||(want?'Playing':'Not playing');
   $('#sub').textContent=[s.a,s.al].filter(Boolean).join(' - ')||(want?'':'Press play');
+  if(auto&&$('#sub').textContent)$('#sub').textContent+=' · Autoplay';
   if('mediaSession' in navigator)navigator.mediaSession.metadata=new MediaMetadata({title:s.t||'',artist:s.a||'',album:s.al||''});
 }
 function playTrack(){
   if(isExt())return;
+  leaveAuto();
   armed=true;   /* from now on, switching tabs starts the new tab's music by itself */
   failIds.clear();
   want=true;plTrack=null;info();
@@ -334,7 +363,7 @@ function showExt(g){
 function hideExt(){$('#ext').replaceChildren();document.body.classList.remove('isext')}
 function choose(i,autoplay){
   const g=GENRES[i];
-  gi=i;ti=0;fails=0;paintTabs();setBg(i);
+  gi=i;ti=0;fails=0;resetAuto();paintTabs();setBg(i);
   if(g.ext){   /* silence the YouTube player, then show the other service's player */
     want=false;cued=null;plTrack=null;nowId='';
     try{if(ready)yt.stopVideo()}catch(e){}
@@ -345,12 +374,16 @@ function choose(i,autoplay){
 }
 function next(){
   if(isExt())return;
-  if(isPL()){if(ready&&[1,2,3].includes(st)){want=true;yt.nextVideo()}else playTrack();return}
-  if(ti+1>=order.length){if(!repeat){want=false;if(ready)yt.pauseVideo();return}buildOrder();ti=0}else ti++;
+  if(auto){playAuto();return}
+  if(isPL()){
+    if(autoOn&&!repeat&&ready&&[1,2,3].includes(st)){const l=yt.getPlaylist()||[];if(l.length&&yt.getPlaylistIndex()===l.length-1){want=true;startAuto();return}}
+    if(ready&&[1,2,3].includes(st)){want=true;yt.nextVideo()}else playTrack();return}
+  if(ti+1>=order.length){if(autoOn&&!repeat){want=true;startAuto();return}if(!repeat){want=false;if(ready)yt.pauseVideo();return}buildOrder();ti=0}else ti++;
   playTrack();
 }
 function prev(){
   if(isExt())return;
+  if(auto){autoPrev();return}
   if(isPL()){if(ready&&[1,2,3].includes(st)){if(yt.getCurrentTime()>3)yt.seekTo(0);else{want=true;yt.previousVideo()}}else playTrack();return}
   if(ready&&yt.getCurrentTime()>3){yt.seekTo(0);return}
   ti=(ti-1+order.length)%order.length;playTrack();
@@ -358,13 +391,14 @@ function prev(){
 function toggle(){
   if(isExt())return;
   if(!ready){playTrack();return}
+  if(auto&&![1,2,3].includes(st)){playAuto(autoCur||undefined);return}
   if(st===1||st===3){want=false;yt.pauseVideo()}
   else if(st===2){want=true;yt.playVideo()}
   else playTrack();
 }
 $('#play').onclick=toggle;$('#next').onclick=next;$('#prev').onclick=prev;
-$('#shuf').onclick=e=>{shuffle=!shuffle;e.currentTarget.setAttribute('aria-pressed',shuffle);if(isPL()){if(ready)yt.setShuffle(shuffle);return}const cur=order[ti];buildOrder();ti=order.indexOf(cur)};
-$('#rep').onclick=e=>{repeat=!repeat;e.currentTarget.setAttribute('aria-pressed',repeat);if(isPL()&&ready)yt.setLoop(repeat)};
+$('#shuf').onclick=e=>{shuffle=!shuffle;e.currentTarget.setAttribute('aria-pressed',shuffle);if(auto){if(shuffle)queue.sort(()=>Math.random()-.5);drawUp();return}if(isPL()){if(ready)yt.setShuffle(shuffle);return}const cur=order[ti];buildOrder();ti=order.indexOf(cur)};
+$('#rep').onclick=e=>{repeat=!repeat;e.currentTarget.setAttribute('aria-pressed',repeat);if(repeat&&autoOn){setAuto(false,true);toast('Repeat is on, so Autoplay is off.')}if(isPL()&&ready)yt.setLoop(repeat)};
 let seeking=false,pending=null,hold=0,lastIn=0;
 const sk=$('#seek'),dur=()=>ready&&st>=0?yt.getDuration():0;
 function commit(){if(pending!==null){const d=dur();if(d)yt.seekTo(d*pending/1000,true);hold=Date.now()+900;pending=null}seeking=false}
@@ -473,11 +507,11 @@ function drawPanel(){
   markNow();
 }
 function markNow(){rows.forEach((r,k)=>r.el.classList.toggle('now',k===nowId))}
-function sizePanel(){const dock=$('.dock'),b=parseFloat(getComputedStyle(dock).bottom)||0;pls.style.maxHeight=Math.max(140,innerHeight-dock.offsetHeight-b-14-96-28)+'px'}
+function sizePanel(){const dock=$('.dock'),b=parseFloat(getComputedStyle(dock).bottom)||0;const mh=Math.max(140,innerHeight-dock.offsetHeight-b-14-96-28-($('#ptabs').offsetHeight||0))+'px';pls.style.maxHeight=mh;ups.style.maxHeight=mh}
 function setPanel(on){
   plist.classList.toggle('open',on);pbtn.setAttribute('aria-expanded',on);
   if(!on)return;
-  sizePanel();plKey='';
+  setView(auto?'up':view);plKey='';
   const g=GENRES[gi];
   if(g.playlist&&!(PLIDS[g.playlist]||[]).length&&ready&&!want)precue();   /* load the list without playing it */
   drawPanel();
@@ -490,7 +524,7 @@ function grabIds(){   /* remember the playlist's song ids once YouTube has loade
 }
 function playSong(id){
   if(!ready){toast('Player is loading, try again in a moment');return}
-  const g=GENRES[gi];armed=true;cued=null;want=true;plTrack=null;failIds.clear();
+  leaveAuto();const g=GENRES[gi];armed=true;cued=null;want=true;plTrack=null;failIds.clear();
   if(g.playlist){
     const idx=(PLIDS[g.playlist]||[]).indexOf(id);if(idx<0)return;
     info();paintPlay(true);
@@ -556,6 +590,7 @@ addEventListener('pointerdown',loadYT,{once:true,passive:true});
 window.onYouTubeIframeAPIReady=()=>{
   yt=new YT.Player('yt',{height:'200',width:'356',playerVars:Object.assign({playsinline:1,controls:0},/^https?:/.test(location.protocol)?{origin:location.origin,widget_referrer:location.href}:{}),events:{
     onReady:()=>{ready=true;if(want)playTrack();else precue()},
+    onAutoplayBlocked:()=>blockedPN(),
     onStateChange:e=>{
       st=e.data;const p=st===1;
       paintPlay();
@@ -569,20 +604,24 @@ window.onYouTubeIframeAPIReady=()=>{
         }
         if(isPL())grabIds();markNow();
         const s=curT();if(vd&&s)fillMeta(s,vd);
+        onPlaying();
       }
       if(st===0&&want){   /* song ended: continue until the user stops it */
-        if(isPL()){const l=yt.getPlaylist()||[];if(!repeat&&l.length&&yt.getPlaylistIndex()===l.length-1)want=false}   /* YouTube moves on / loops by itself */
+        if(auto){autoEnded()}
+        else if(isPL()){const l=yt.getPlaylist()||[];if(!repeat&&l.length&&yt.getPlaylistIndex()===l.length-1){if(autoOn)startAuto();else want=false}}   /* YouTube moves on / loops by itself */
         else next();
       }
       if('mediaSession' in navigator)navigator.mediaSession.playbackState=p?'playing':'paused';
     },
     onError:e=>{
       const code=e&&e.data,why=(ERR[code]||'This song can’t be played here.')+' (error '+code+')';
+      if(auto){autoError(why);return}
       if(isPL()){   /* YouTube usually moves on by itself after a blocked song, so only step in if it did not */
         const vd=yt.getVideoData(),k=vd&&vd.video_id;
         if(k){const o=PL[k]=PL[k]||{t:'',a:'',al:''};o.blocked=true;failIds.add(k);paintRow(k)}
         const total=((yt.getPlaylist()||[]).length)||1;
         if(failIds.size>=total){want=false;paintPlay();toast(why+' None of the songs in this playlist can play outside YouTube.',9000);return}
+        {const l2=yt.getPlaylist()||[];if(autoOn&&!repeat&&l2.length&&yt.getPlaylistIndex()===l2.length-1){toast(why+' Moving on to recommendations.',4000);startAuto();return}}
         toast(why+' Skipping.',4000);
         const idx=yt.getPlaylistIndex();
         setTimeout(()=>{if(want&&isPL()&&yt.getPlaylistIndex()===idx&&![1,3].includes(yt.getPlayerState()))yt.nextVideo()},1500);
@@ -604,6 +643,248 @@ setInterval(()=>{
   if(seeking||pending!==null||Date.now()<hold)return;                            /* don't fight the finger or a seek in progress */
   sk.value=c/d*1000;sk.style.setProperty('--p',c/d*100+'%');$('#cur').textContent=fmt(c);
 },500);
+
+/* ===================== SMART AUTOPLAY & RECOMMENDATIONS =====================
+   When the playlist ends, the site keeps going with songs that match the mood (and artist / genre of what just played),
+   like YouTube Music's autoplay. It is free: no AI service, no API key needed.
+   WHERE THE SONGS COME FROM
+     1. RECS (below): songs you pick by hand for a tab. Highest priority.
+     2. The playlists of similar tabs (SIMILAR below). Their song lists are read with the official YouTube player API.
+     3. Songs from the same artist / genre are ranked higher (artist from YouTube, genre from the same iTunes lookup the site already uses).
+   Songs already heard this session are never repeated, and songs YouTube refuses to embed are skipped and remembered.
+   Only the official YouTube IFrame Player API is used to play. Autoplay only ever starts after you pressed play yourself. */
+const SIMILAR={   /* tab name -> tabs that sound close to it, best match first. Tabs not listed here fall back to all other tabs. */
+  'Indie Pop':['Mood Fresh','Aura','Old Is Gold'],
+  'Lock the fu*k In':['Phonk','Aura'],
+  'Old Is Gold':['Indie Pop','Mood Fresh'],
+  'Phonk':['Lock the fu*k In','Aura'],
+  'Aura':['Phonk','Lock the fu*k In','Mood Fresh'],
+  'Mood Fresh':['Indie Pop','Aura']
+};
+const RECS={   /* optional hand-picked songs per tab name ('*' = every tab): { yt:'VIDEO_ID', t:'Title', a:'Artist' }  (t and a are optional) */
+  /* 'Phonk':[{yt:'XXXXXXXXXXX',t:'Song',a:'Artist'}], */
+};
+try{autoOn=localStorage.getItem('mb-autoplay')!=='0'}catch(e){}
+if(autoOn){repeat=false;$('#rep').setAttribute('aria-pressed','false')}   /* autoplay and repeat-the-playlist are alternatives: a looping playlist never ends */
+$('#auto').setAttribute('aria-pressed',autoOn);
+const QN=8,queue=[],seen=new Set(),bad=new Set(),POOL={},autoHist=[],prepAt={};
+let autoCur='',autoSeq=0,qSeq=0,autoFails=0,prepBusy=null,prepFor=-1,wd=0,pnId='',view='list',prepT=0;
+try{JSON.parse(localStorage.getItem('mb-bad')||'[]').forEach(x=>IDRE.test(x)&&bad.add(x))}catch(e){}
+const saveBad=()=>{try{localStorage.setItem('mb-bad',JSON.stringify([...bad].slice(-300)))}catch(e){}};
+const meta=id=>PL[id]=PL[id]||{t:'',a:'',al:''};
+const timeout=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(r,ms))]);
+const pn=$('#pnext'),ups=$('#ups'),ptL=$('#ptL'),ptU=$('#ptU');
+
+/* ---- read the song list of another playlist (hidden second player that only cues, never plays; or the Data API when a key is set) ---- */
+let hv=null,hvOk=false,hvJob=null,hvLast='',hvKill=0;const hvQ=[];
+function harvest(pid){
+  return new Promise(res=>{
+    if(POOL[pid]){res(POOL[pid]);return}
+    if(YT_API_KEY){resolveList(pid).then(r=>{POOL[pid]=r&&r.ids?r.ids.slice():[];if(r&&r.ids)r.ids.forEach(id=>setRaw(meta(id),r.meta[id].title,r.meta[id].channel));res(POOL[pid])});return}
+    hvQ.push({pid,res});pump();
+  });
+}
+function hvDone(job,ids){
+  if(hvJob!==job)return;
+  clearTimeout(job.t);hvJob=null;hvLast=(ids||[]).join();POOL[job.pid]=ids||[];job.res(POOL[job.pid]);
+  if(hvQ.length)setTimeout(pump,60);
+  else{clearTimeout(hvKill);hvKill=setTimeout(()=>{if(!hvJob&&hv){try{hv.destroy()}catch(e){}hv=null;hvOk=false}},20000)}   /* free the helper player when idle */
+}
+function hvGo(){const j=hvJob;if(!j)return;try{hv.cuePlaylist({list:j.pid,listType:'playlist'})}catch(e){hvDone(j,[])}}
+function pump(){
+  if(hvJob||!hvQ.length)return;
+  if(!ready||!window.YT||!YT.Player){setTimeout(pump,600);return}
+  clearTimeout(hvKill);
+  const job=hvJob=hvQ.shift();
+  job.t=setTimeout(()=>hvDone(job,[]),10000);
+  if(hv){if(hvOk)hvGo();return}
+  const d=document.createElement('div');d.id='ythv';document.body.appendChild(d);
+  hv=new YT.Player('ythv',{height:'200',width:'200',playerVars:Object.assign({playsinline:1,controls:0},/^https?:/.test(location.protocol)?{origin:location.origin,widget_referrer:location.href}:{}),events:{
+    onReady:()=>{hvOk=true;try{hv.mute()}catch(e){}hvGo()},
+    onStateChange:e=>{
+      if(e.data!==5||!hvJob)return;
+      let l=null;try{l=hv.getPlaylist()}catch(x){}
+      if(l&&l.length&&l.join()!==hvLast)hvDone(hvJob,l.slice());
+    },
+    onError:()=>{if(hvJob)hvDone(hvJob,[])}
+  }});
+}
+
+/* ---- is this song allowed to play here? YouTube's oEmbed answers 401 for songs whose owner blocks embedding, 404 for removed ones ---- */
+function probe(id){
+  const s=meta(id);
+  return s.probed||(s.probed=(async()=>{
+    try{
+      const r=await fetch('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent('https://www.youtube.com/watch?v='+id));
+      if(r.status===401||r.status===403||r.status===404){bad.add(id);saveBad();s.blocked=true;return false}
+      if(r.ok){const j=await r.json();if(j&&j.title)setRaw(s,j.title,j.author_name);return true}
+    }catch(e){}
+    try{const j=await oembed(id);if(j)setRaw(s,j.title,j.author_name)}catch(e){}   /* could not check: keep it, the player reports it if it really can't play */
+    return true;
+  })());
+}
+const tabIdsOf=i=>{const g=GENRES[i],o=[];(g.tracks||[]).forEach(t=>t.yt&&o.push(t.yt));if(g.playlist)o.push(...(PLIDS[g.playlist]||POOL[g.playlist]||[]));return o};
+
+/* ---- build the list of candidates, then rank them: mood (tab closeness) + artist + genre + a little randomness ---- */
+async function gather(tab,own){
+  const items=new Map(),g=GENRES[tab];
+  const add=(id,w)=>{if(IDRE.test(id)&&!bad.has(id)&&!seen.has(id)&&!own.has(id)&&!queue.includes(id)&&id!==autoCur)items.set(id,Math.max(items.get(id)||0,w))};
+  (RECS[g.name]||[]).concat(RECS['*']||[]).forEach(r=>{
+    if(!r||!IDRE.test(r.yt||''))return;
+    const s=touch(meta(r.yt));if(r.t){s.t=r.t;s.own.t=true}if(r.a){s.a=r.a;s.own.a=true}
+    add(r.yt,3);
+  });
+  const sim=(SIMILAR[g.name]||[]).map(n=>GENRES.findIndex(x=>x.name===n)).filter(j=>j>=0&&j!==tab);
+  const rest=GENRES.map((_,j)=>j).filter(j=>j!==tab&&!sim.includes(j));
+  const take=async(j,w)=>{const h=GENRES[j];if(h.ext)return;(h.tracks||[]).forEach(t=>t.yt&&add(t.yt,w));if(h.playlist)(await harvest(h.playlist)).forEach(id=>add(id,w))};
+  for(let k=0;k<sim.length;k++){await take(sim[k],2-k*.15);if(items.size>=30)break}
+  if(items.size<10)for(const j of rest){await take(j,1);if(items.size>=20)break}
+  return items;
+}
+function prepareAuto(){
+  if(!autoOn||isExt())return Promise.resolve();
+  if(prepBusy&&prepFor===gi)return prepBusy;
+  const tab=gi,qs=qSeq;prepFor=tab;prepAt[tab]=Date.now();
+  const p=prepBusy=(async()=>{
+    try{
+      const own=new Set(tabIdsOf(tab));
+      for(let r=0;r<3&&queue.length<QN;r++){
+        let items=await gather(tab,own);
+        if(!items.size&&r===0&&!queue.length){   /* heard everything: allow older songs again, but never the last few */
+          const keep=[...seen].slice(-15);seen.clear();keep.forEach(x=>seen.add(x));items=await gather(tab,new Set());
+        }
+        if(!items.size)break;
+        const seed=auto?meta(autoCur):(plTrack||{});
+        let cand=[...items].map(([id,w])=>({id,sc:w+Math.random()*1.2})).sort((a,b)=>b.sc-a.sc).slice(0,16);
+        await timeout(Promise.all(cand.map(c=>probe(c.id))),6000);
+        cand=cand.filter(c=>!bad.has(c.id)).sort((a,b)=>b.sc-a.sc);
+        await timeout(Promise.all(cand.slice(0,8).map(c=>album(meta(c.id)))),3500);   /* genre lookup (best effort) */
+        const sa=norm(seed.a),sc=norm(seed.chan),sg=seed.genre;
+        cand.forEach(c=>{const s=meta(c.id);if(sa&&norm(s.a)===sa)c.sc+=2.5;else if(sc&&norm(s.chan)===sc)c.sc+=1.2;if(sg&&s.genre===sg)c.sc+=1});
+        cand.sort((a,b)=>b.sc-a.sc);
+        if(qs!==qSeq||gi!==tab)return;   /* the user changed tab meanwhile */
+        const cnt={},pick=[];
+        for(const c of cand){const k=norm(meta(c.id).a)||c.id;if((cnt[k]=(cnt[k]||0)+1)>2)continue;pick.push(c.id);if(queue.length+pick.length>=QN)break}
+        if(!pick.length)continue;
+        queue.push(...pick);drawUp();
+      }
+    }catch(e){}
+  })();
+  p.finally(()=>{if(prepBusy===p)prepBusy=null;drawUp()});
+  drawUp();
+  return p;
+}
+
+/* ---- playing the queue ---- */
+function leaveAuto(){auto=false;autoSeq++;hidePN()}
+function resetAuto(){leaveAuto();queue.length=0;autoCur='';autoHist.length=0;qSeq++;prepBusy=null;clearTimeout(prepT);drawUp()}
+async function startAuto(){   /* the playlist is over */
+  if(!autoOn||isExt())return;
+  const tab=gi,mine=++autoSeq;
+  if(!queue.length){paintPlay(true);await prepareAuto()}
+  if(mine!==autoSeq||gi!==tab)return;
+  if(!queue.length){want=false;paintPlay();toast('Autoplay couldn’t find new songs right now. Press play to try again.',7000);return}
+  toast('Playlist finished. Autoplay is continuing with similar songs.',4500);
+  playAuto();
+}
+function playAuto(id){
+  if(!ready){toast('Player is loading, try again in a moment');return}
+  if(id){const k=queue.indexOf(id);if(k>=0)queue.splice(k,1)}else id=queue.shift();
+  if(!id){
+    const mine=++autoSeq;want=true;paintPlay(true);
+    prepareAuto().then(()=>{if(mine!==autoSeq)return;if(queue.length)playAuto();else{want=false;paintPlay();toast('No recommendations right now. Try again in a moment.',6000)}});
+    return;
+  }
+  auto=true;autoSeq++;autoCur=id;armed=true;want=true;cued=null;plTrack=null;failIds.clear();
+  if(autoHist[autoHist.length-1]!==id)autoHist.push(id);
+  seen.add(id);nowId=id;hidePN();info();paintPlay(true);
+  $('#cur').textContent=$('#dur').textContent='0:00';sk.value=0;sk.style.setProperty('--p','0%');
+  try{yt.loadVideoById(id)}catch(e){}
+  markNow();drawUp();watch(id);
+  if(queue.length<4)prepareAuto();
+}
+function autoEnded(){if(!autoOn){want=false;paintPlay();return}playAuto()}
+function autoError(why){
+  const id=autoCur;bad.add(id);saveBad();meta(id).blocked=true;
+  if(++autoFails>=4){want=false;paintPlay();toast(why+' Several songs in a row failed, so autoplay paused.',8000);return}
+  toast(why+' Skipping to the next recommendation.',4000);
+  playAuto();
+}
+function autoPrev(){
+  if((ready&&yt.getCurrentTime()>3)||autoHist.length<2){if(ready)yt.seekTo(0);return}
+  const cur=autoHist.pop();if(cur&&!queue.includes(cur))queue.unshift(cur);
+  playAuto(autoHist[autoHist.length-1]);
+}
+function onPlaying(){   /* called whenever YouTube reports "playing" */
+  autoFails=0;hidePN();if(nowId)seen.add(nowId);
+  if(autoOn&&!auto&&queue.length<3&&!prepBusy&&Date.now()-(prepAt[gi]||0)>60000){clearTimeout(prepT);prepT=setTimeout(prepareAuto,4000)}   /* line up recommendations while the playlist plays */
+}
+
+/* ---- browser blocked the automatic start: show a clear Play next button (a click is allowed to start sound) ---- */
+function watch(id){clearTimeout(wd);wd=setTimeout(()=>{if(auto&&autoCur===id&&want&&st!==1&&st!==3)blockedPN(id)},5000)}
+function blockedPN(id){
+  id=id||autoCur;if(!auto||!id||!want)return;
+  pnId=id;want=false;paintPlay();
+  $('#pnBtn').textContent='▶ Play next'+(meta(id).t?': '+meta(id).t:'');
+  pn.classList.add('show');
+}
+function hidePN(){clearTimeout(wd);pn.classList.remove('show')}
+$('#pnBtn').onclick=()=>playAuto(pnId||undefined);
+
+/* ---- autoplay switch ---- */
+function setAuto(on,quiet){
+  autoOn=!!on;try{localStorage.setItem('mb-autoplay',autoOn?'1':'0')}catch(e){}
+  $('#auto').setAttribute('aria-pressed',autoOn);
+  if(autoOn){
+    if(repeat){repeat=false;$('#rep').setAttribute('aria-pressed','false');if(isPL()&&ready)try{yt.setLoop(false)}catch(e){}}
+    if(!quiet)toast('Autoplay on. When the playlist ends, similar songs keep playing.');
+    if(want||st===1)prepareAuto();
+  }else if(!quiet)toast('Autoplay off.');
+  drawUp();
+}
+$('#auto').onclick=()=>setAuto(!autoOn);
+
+/* ---- "Up next" view inside the playlist panel ---- */
+function setView(v){
+  view=v;pls.hidden=v!=='list';ups.hidden=v!=='up';
+  ptL.setAttribute('aria-selected',v==='list');ptU.setAttribute('aria-selected',v==='up');
+  sizePanel();
+  if(v==='up'){drawUp();if(autoOn&&!queue.length&&!prepBusy)prepareAuto()}
+}
+ptL.onclick=()=>setView('list');ptU.onclick=()=>setView('up');
+function recRow(id,now){
+  const s=meta(id),el=document.createElement('div');el.className='song rec'+(now?' now':'');
+  const head=document.createElement('button');head.className='head';head.type='button';head.setAttribute('aria-label',(now?'Now playing: ':'Play ')+(s.t||'song'));
+  const th=new Image();th.className='th';th.alt='';th.loading='lazy';th.src=thumb(id,'mqdefault');
+  const w=document.createElement('span');w.className='nm2';
+  const nm=document.createElement('span');nm.className='nm';nm.textContent=s.t||'YouTube video';
+  const ar=document.createElement('span');ar.className='ar';ar.textContent=s.a||s.chan||'';
+  w.append(nm,ar);
+  const eq=document.createElement('span');eq.className='eq';eq.innerHTML='<b></b><b></b><b></b>';
+  head.append(th,w,eq);head.onclick=()=>now?toggle():playAuto(id);   /* textContent only: titles are untrusted text */
+  el.append(head);
+  if(!now){
+    const x=document.createElement('button');x.className='rx';x.type='button';x.textContent='✕';x.setAttribute('aria-label','Remove from up next');
+    x.onclick=()=>{const k=queue.indexOf(id);if(k>=0)queue.splice(k,1);if(queue.length<4)prepareAuto();drawUp()};
+    el.append(x);
+  }
+  if(!s.t&&!s.probed)probe(id).then(drawUp);
+  return el;
+}
+function drawUp(){
+  $('#ucnt').textContent=queue.length||'';
+  if(ups.hidden)return;
+  const t=document.createElement('p');t.className='upt';
+  t.textContent=!autoOn?'Autoplay is off. Turn on the ∞ button to keep the music going.':(prepBusy&&!queue.length)?'Finding songs that match this mood…':queue.length?'Autoplay · matched to '+GENRES[gi].name+' and the song you’re playing':'No suggestions yet. They appear while a song plays.';
+  const acts=document.createElement('div');acts.className='acts upa';
+  const b1=document.createElement('button');b1.className='act';b1.type='button';b1.textContent='▶ Play next';b1.disabled=!queue.length;b1.onclick=()=>playAuto();
+  const b2=document.createElement('button');b2.className='act';b2.type='button';b2.textContent='↻ Refresh';b2.disabled=!autoOn;b2.onclick=()=>{queue.length=0;prepareAuto()};
+  acts.append(b1,b2);
+  const kids=[t,acts];
+  if(auto&&autoCur)kids.push(recRow(autoCur,true));
+  queue.forEach(id=>kids.push(recRow(id,false)));
+  ups.replaceChildren(...kids);
+}
 
 if(location.protocol==='file:')toast('Open this site through a server, not by double-clicking the file. YouTube blocks playback from file://. See README.',12000);
 choose(0,false);
