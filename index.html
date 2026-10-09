@@ -645,22 +645,15 @@ setInterval(()=>{
 },500);
 
 /* ===================== SMART AUTOPLAY & RECOMMENDATIONS =====================
-   When the playlist ends, the site keeps going with songs that match the mood (and artist / genre of what just played),
-   like YouTube Music's autoplay. It is free: no AI service, no API key needed.
-   WHERE THE SONGS COME FROM
-     1. RECS (below): songs you pick by hand for a tab. Highest priority.
-     2. The playlists of similar tabs (SIMILAR below). Their song lists are read with the official YouTube player API.
-     3. Songs from the same artist / genre are ranked higher (artist from YouTube, genre from the same iTunes lookup the site already uses).
-   Songs already heard this session are never repeated, and songs YouTube refuses to embed are skipped and remembered.
-   Only the official YouTube IFrame Player API is used to play. Autoplay only ever starts after you pressed play yourself. */
-const SIMILAR={   /* tab name -> tabs that sound close to it, best match first. Tabs not listed here fall back to all other tabs. */
-  'Indie Pop':['Mood Fresh','Aura','Old Is Gold'],
-  'Lock the fu*k In':['Phonk','Aura'],
-  'Old Is Gold':['Indie Pop','Mood Fresh'],
-  'Phonk':['Lock the fu*k In','Aura'],
-  'Aura':['Phonk','Lock the fu*k In','Mood Fresh'],
-  'Mood Fresh':['Indie Pop','Aura']
-};
+   When the playlist ends, the site keeps going with songs of the SAME STYLE, like YouTube Music's autoplay. Free: no AI service.
+   HOW IT STAYS ON GENRE
+     1. It first ANALYSES the playlist you were listening to: words its songs share (e.g. "phonk"), artists, channels, genre and era.
+     2. New songs are only accepted if they match that profile. A song that doesn't fit (wrong genre, wrong era) is dropped.
+     3. Where new songs come from: RECS (your own picks, below), a YouTube search for the same style (only when YT_API_KEY is set),
+        and a sample of your other tabs (kept only if they pass step 2).
+     4. If not enough new songs fit, autoplay continues with the playlist's own songs, least recently heard first. Never off-genre filler.
+   Songs heard this session are not repeated, and songs YouTube refuses to embed are skipped and remembered.
+   Only the official YouTube IFrame Player API plays anything, and autoplay only starts after you pressed play yourself. */
 const RECS={   /* optional hand-picked songs per tab name ('*' = every tab): { yt:'VIDEO_ID', t:'Title', a:'Artist' }  (t and a are optional) */
   /* 'Phonk':[{yt:'XXXXXXXXXXX',t:'Song',a:'Artist'}], */
 };
@@ -717,56 +710,138 @@ function probe(id){
     try{
       const r=await fetch('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent('https://www.youtube.com/watch?v='+id));
       if(r.status===401||r.status===403||r.status===404){bad.add(id);saveBad();s.blocked=true;return false}
-      if(r.ok){const j=await r.json();if(j&&j.title)setRaw(s,j.title,j.author_name);return true}
+      if(r.ok){const j=await r.json();if(j&&j.title){s.full=j.title;setRaw(s,j.title,j.author_name)}return true}
     }catch(e){}
-    try{const j=await oembed(id);if(j)setRaw(s,j.title,j.author_name)}catch(e){}   /* could not check: keep it, the player reports it if it really can't play */
+    try{const j=await oembed(id);if(j){s.full=j.title;setRaw(s,j.title,j.author_name)}}catch(e){}   /* could not check: keep it, the player reports it if it really can't play */
     return true;
   })());
 }
 const tabIdsOf=i=>{const g=GENRES[i],o=[];(g.tracks||[]).forEach(t=>t.yt&&o.push(t.yt));if(g.playlist)o.push(...(PLIDS[g.playlist]||POOL[g.playlist]||[]));return o};
 
-/* ---- build the list of candidates, then rank them: mood (tab closeness) + artist + genre + a little randomness ---- */
-async function gather(tab,own){
-  const items=new Map(),g=GENRES[tab];
-  const add=(id,w)=>{if(IDRE.test(id)&&!bad.has(id)&&!seen.has(id)&&!own.has(id)&&!queue.includes(id)&&id!==autoCur)items.set(id,Math.max(items.get(id)||0,w))};
-  (RECS[g.name]||[]).concat(RECS['*']||[]).forEach(r=>{
-    if(!r||!IDRE.test(r.yt||''))return;
-    const s=touch(meta(r.yt));if(r.t){s.t=r.t;s.own.t=true}if(r.a){s.a=r.a;s.own.a=true}
-    add(r.yt,3);
+/* ---- 1. ANALYSE the playlist: what words, artists, channels, genre and era do its songs share? ---- */
+const STOP=new Set('official video audio lyrics lyric music feat featuring with from this that song songs full version remix hindi punjabi new latest visualizer visualiser topic records entertainment series presents prod produced mashup original soundtrack'.split(' '));
+const toks=s=>(((s.full||s.rawSong||s.t||'')+' '+(s.chan||'')).toLowerCase().match(/[a-z0-9]{4,}/g)||[]).filter(t=>!STOP.has(t)&&!/^\d+$/.test(t));
+const PROF={},profLabel={};
+async function analyze(tab){
+  if(PROF[tab])return PROF[tab];
+  const g=GENRES[tab];
+  let ids=tabIdsOf(tab);
+  if(!ids.length&&g.playlist)ids=await harvest(g.playlist);
+  const sample=ids.slice().sort(()=>Math.random()-.5).slice(0,20);
+  await timeout(Promise.all(sample.map(id=>probe(id))),7000);
+  const ss=sample.map(meta).filter(s=>s.rawSong||s.t);
+  await timeout(Promise.all(ss.slice(0,6).map(s=>album(s))),3500);   /* genre + year from iTunes, best effort */
+  const n=ss.length,cnt=new Map(),arts=new Map(),chans=new Set(),gen=new Map(),yrs=[];
+  ss.forEach(s=>{
+    new Set(toks(s)).forEach(t=>cnt.set(t,(cnt.get(t)||0)+1));
+    const a=norm(s.a);if(a){if(!arts.has(a))arts.set(a,{n:0,name:s.a});arts.get(a).n++}
+    const c=norm(s.chan);if(c)chans.add(c);
+    if(s.genre)gen.set(s.genre,(gen.get(s.genre)||0)+1);
+    if(+s.yr)yrs.push(+s.yr);
   });
-  const sim=(SIMILAR[g.name]||[]).map(n=>GENRES.findIndex(x=>x.name===n)).filter(j=>j>=0&&j!==tab);
-  const rest=GENRES.map((_,j)=>j).filter(j=>j!==tab&&!sim.includes(j));
-  const take=async(j,w)=>{const h=GENRES[j];if(h.ext)return;(h.tracks||[]).forEach(t=>t.yt&&add(t.yt,w));if(h.playlist)(await harvest(h.playlist)).forEach(id=>add(id,w))};
-  for(let k=0;k<sim.length;k++){await take(sim[k],2-k*.15);if(items.size>=30)break}
-  if(items.size<10)for(const j of rest){await take(j,1);if(items.size>=20)break}
-  return items;
+  const need=Math.max(2,Math.ceil(n*.25));
+  const sig=[...cnt].filter(([t,c])=>c>=need).sort((a,b)=>b[1]-a[1]).slice(0,6).map(x=>x[0]);   /* words that many songs share, e.g. "phonk" */
+  const gl=[...gen].sort((a,b)=>b[1]-a[1]),gt=gl.reduce((x,y)=>x+y[1],0);
+  const genre=gl[0]&&gl[0][1]>=Math.max(2,Math.ceil(gt*.4))?gl[0][0]:'';
+  yrs.sort((a,b)=>a-b);let lo=0,hi=0;
+  if(yrs.length>=4){lo=yrs[Math.floor(yrs.length*.1)]-3;hi=yrs[Math.ceil(yrs.length*.9)-1]+3}   /* the playlist's era */
+  const artL=[...arts.values()].sort((a,b)=>b.n-a.n),q=[];
+  if(sig.length)q.push(sig.slice(0,2).join(' '));
+  if(artL[0])q.push(artL[0].name+(sig[0]?' '+sig[0]:''));
+  const p={n,sig,arts:new Set(arts.keys()),chans,genre,lo,hi,q};
+  profLabel[tab]=[sig.slice(0,2).join(', '),genre].filter(Boolean).join(' · ');
+  if(n>=3)PROF[tab]=p;   /* not enough songs read yet: look again next time */
+  return p;
 }
+/* how well does a song fit the playlist's profile? sig = number of real matches (artist, channel, shared word, genre) */
+function fit(s,p){
+  let sc=0,sig=0;
+  const a=norm(s.a),c=norm(s.chan);
+  if(a&&p.arts.has(a)){sc+=3;sig++}
+  if(c&&p.chans.has(c)){sc+=2;sig++}
+  const tk=new Set(toks(s));let m=0;p.sig.forEach(t=>{if(tk.has(t))m++});
+  if(m){sc+=Math.min(m,3)*1.5;sig++}
+  if(p.genre&&s.genre){if(s.genre===p.genre){sc+=2;sig++}else sc-=1.5}
+  const y=+s.yr;
+  if(p.lo&&y){if(y>=p.lo&&y<=p.hi)sc+=1.5;else if(y<p.lo-8||y>p.hi+8)sc-=2.5;else sc-=.5}
+  return {sc,sig};
+}
+/* with a free YouTube Data API key: search for fresh songs in the playlist's own style (embeddable music videos only) */
+const dec=x=>(x||'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+async function searchSame(p){
+  if(!YT_API_KEY||!p.q.length)return [];
+  const out=[];
+  for(const q of p.q.slice(0,2)){
+    const ck='mb-srch-'+q;let v=null;
+    try{const c=JSON.parse(localStorage.getItem(ck)||'null');if(c&&Date.now()-c.t<6*36e5&&c.v)v=c.v}catch(e){}
+    if(!v){
+      try{
+        const r=await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&videoSyndicated=true&videoCategoryId=10&maxResults=25&q='+encodeURIComponent(q)+'&key='+encodeURIComponent(YT_API_KEY));
+        if(!r.ok)continue;
+        const j=await r.json();
+        v=(j.items||[]).filter(x=>x.id&&x.id.videoId).map(x=>({id:x.id.videoId,t:dec(x.snippet.title),c:dec(x.snippet.channelTitle)}));
+        try{localStorage.setItem(ck,JSON.stringify({t:Date.now(),v}))}catch(e){}
+      }catch(e){continue}
+    }
+    v.forEach(x=>{if(!IDRE.test(x.id))return;const s=meta(x.id);s.full=x.t;setRaw(s,x.t,x.c);s.probed=s.probed||Promise.resolve(true);out.push(x.id)});
+  }
+  return out;
+}
+
+/* ---- 2. PICK songs that fit. New songs must pass the fit test (otherwise they are dropped); the playlist's own songs fill any gap ---- */
 function prepareAuto(){
   if(!autoOn||isExt())return Promise.resolve();
   if(prepBusy&&prepFor===gi)return prepBusy;
   const tab=gi,qs=qSeq;prepFor=tab;prepAt[tab]=Date.now();
   const p=prepBusy=(async()=>{
     try{
+      const g=GENRES[tab],prof=await analyze(tab);
+      if(qs!==qSeq||gi!==tab)return;
       const own=new Set(tabIdsOf(tab));
-      for(let r=0;r<3&&queue.length<QN;r++){
-        let items=await gather(tab,own);
-        if(!items.size&&r===0&&!queue.length){   /* heard everything: allow older songs again, but never the last few */
-          const keep=[...seen].slice(-15);seen.clear();keep.forEach(x=>seen.add(x));items=await gather(tab,new Set());
-        }
-        if(!items.size)break;
-        const seed=auto?meta(autoCur):(plTrack||{});
-        let cand=[...items].map(([id,w])=>({id,sc:w+Math.random()*1.2})).sort((a,b)=>b.sc-a.sc).slice(0,16);
-        await timeout(Promise.all(cand.map(c=>probe(c.id))),6000);
-        cand=cand.filter(c=>!bad.has(c.id)).sort((a,b)=>b.sc-a.sc);
-        await timeout(Promise.all(cand.slice(0,8).map(c=>album(meta(c.id)))),3500);   /* genre lookup (best effort) */
-        const sa=norm(seed.a),sc=norm(seed.chan),sg=seed.genre;
-        cand.forEach(c=>{const s=meta(c.id);if(sa&&norm(s.a)===sa)c.sc+=2.5;else if(sc&&norm(s.chan)===sc)c.sc+=1.2;if(sg&&s.genre===sg)c.sc+=1});
-        cand.sort((a,b)=>b.sc-a.sc);
-        if(qs!==qSeq||gi!==tab)return;   /* the user changed tab meanwhile */
-        const cnt={},pick=[];
-        for(const c of cand){const k=norm(meta(c.id).a)||c.id;if((cnt[k]=(cnt[k]||0)+1)>2)continue;pick.push(c.id);if(queue.length+pick.length>=QN)break}
-        if(!pick.length)continue;
-        queue.push(...pick);drawUp();
+      const seed=auto?meta(autoCur):(plTrack||{}),sa=norm(seed.a),sg=seed.genre;
+      /* a. candidates for NEW songs: your hand-picked RECS, search results (with an API key), and a sample of the other tabs */
+      const fresh=new Set(),curated=new Set();
+      const addF=id=>{if(IDRE.test(id)&&!bad.has(id)&&!seen.has(id)&&!own.has(id)&&!queue.includes(id)&&id!==autoCur)fresh.add(id)};
+      (RECS[g.name]||[]).concat(RECS['*']||[]).forEach(r=>{
+        if(!r||!IDRE.test(r.yt||''))return;
+        const s=touch(meta(r.yt));if(r.t){s.t=r.t;s.own.t=true}if(r.a){s.a=r.a;s.own.a=true}
+        addF(r.yt);if(fresh.has(r.yt))curated.add(r.yt);
+      });
+      (await searchSame(prof)).forEach(addF);
+      let pool=[];
+      for(let j=0,k=0;j<GENRES.length&&k<3;j++){
+        const h=GENRES[j];if(j===tab||h.ext)continue;k++;
+        (h.tracks||[]).forEach(t=>t.yt&&pool.push(t.yt));
+        if(h.playlist)pool.push(...await harvest(h.playlist));
+        if(qs!==qSeq||gi!==tab)return;
+      }
+      pool.sort(()=>Math.random()-.5).slice(0,20).forEach(addF);
+      /* b. read each candidate's title / channel / embeddability, then keep only the ones that fit this playlist */
+      const cand=[...curated,...[...fresh].filter(id=>!curated.has(id)).slice(0,32)];
+      await timeout(Promise.all(cand.map(id=>probe(id))),7000);
+      let cs=cand.filter(id=>!bad.has(id)).map(id=>({id,ex:curated.has(id),sc:fit(meta(id),prof).sc}));
+      cs.sort((a,b)=>b.sc-a.sc);
+      await timeout(Promise.all(cs.slice(0,10).map(c=>album(meta(c.id)))),3500);   /* genre + year of the best candidates */
+      cs.forEach(c=>{
+        const s=meta(c.id),f=fit(s,prof);
+        c.ok=c.ex||(f.sc>=3&&f.sig>=1);   /* the gate: wrong genre / era / vibe never gets in */
+        c.sc=f.sc+(c.ex?3:0)+Math.random()*.8+(sa&&norm(s.a)===sa?1.5:0)+(sg&&s.genre===sg?.5:0);
+      });
+      cs=cs.filter(c=>c.ok).sort((a,b)=>b.sc-a.sc);
+      if(qs!==qSeq||gi!==tab)return;
+      const cnt={},pick=[];
+      for(const c of cs){const k=norm(meta(c.id).a)||c.id;if((cnt[k]=(cnt[k]||0)+1)>2)continue;meta(c.id).replay=false;pick.push(c.id);if(queue.length+pick.length>=QN)break}
+      queue.push(...pick);
+      /* c. not enough matching new songs: continue with this playlist's own songs, least recently heard first */
+      if(queue.length<QN){
+        const recent=new Set([...seen].slice(-15));
+        const base=[...own].filter(id=>!bad.has(id)&&!queue.includes(id)&&id!==autoCur);
+        let reps=base.filter(id=>!recent.has(id));
+        if(!reps.length&&!queue.length)reps=base;
+        reps.sort(()=>Math.random()-.5);
+        if(sa)reps.sort((a,b)=>(norm(meta(b).a)===sa)-(norm(meta(a).a)===sa));
+        reps.slice(0,QN-queue.length).forEach(id=>{meta(id).replay=true;queue.push(id)});
+        reps.slice(0,QN).forEach(id=>{if(!meta(id).probed)probe(id).then(drawUp)});
       }
     }catch(e){}
   })();
@@ -858,7 +933,7 @@ function recRow(id,now){
   const th=new Image();th.className='th';th.alt='';th.loading='lazy';th.src=thumb(id,'mqdefault');
   const w=document.createElement('span');w.className='nm2';
   const nm=document.createElement('span');nm.className='nm';nm.textContent=s.t||'YouTube video';
-  const ar=document.createElement('span');ar.className='ar';ar.textContent=s.a||s.chan||'';
+  const ar=document.createElement('span');ar.className='ar';ar.textContent=(s.a||s.chan||'')+(s.replay?' · from this playlist':'');
   w.append(nm,ar);
   const eq=document.createElement('span');eq.className='eq';eq.innerHTML='<b></b><b></b><b></b>';
   head.append(th,w,eq);head.onclick=()=>now?toggle():playAuto(id);   /* textContent only: titles are untrusted text */
@@ -875,7 +950,8 @@ function drawUp(){
   $('#ucnt').textContent=queue.length||'';
   if(ups.hidden)return;
   const t=document.createElement('p');t.className='upt';
-  t.textContent=!autoOn?'Autoplay is off. Turn on the ∞ button to keep the music going.':(prepBusy&&!queue.length)?'Finding songs that match this mood…':queue.length?'Autoplay · matched to '+GENRES[gi].name+' and the song you’re playing':'No suggestions yet. They appear while a song plays.';
+  const lab=profLabel[gi],only=queue.length&&queue.every(id=>meta(id).replay);
+  t.textContent=!autoOn?'Autoplay is off. Turn on the ∞ button to keep the music going.':(prepBusy&&!queue.length)?'Checking what this playlist sounds like…':queue.length?(only?'No new songs matched this playlist’s style, so autoplay replays its songs. Add RECS or a YouTube API key for fresh ones.':'Autoplay · same style as '+GENRES[gi].name+(lab?' ('+lab+')':'')):'No suggestions yet. They appear while a song plays.';
   const acts=document.createElement('div');acts.className='acts upa';
   const b1=document.createElement('button');b1.className='act';b1.type='button';b1.textContent='▶ Play next';b1.disabled=!queue.length;b1.onclick=()=>playAuto();
   const b2=document.createElement('button');b2.className='act';b2.type='button';b2.textContent='↻ Refresh';b2.disabled=!autoOn;b2.onclick=()=>{queue.length=0;prepareAuto()};
